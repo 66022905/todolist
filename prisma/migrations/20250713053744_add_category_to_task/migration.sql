@@ -6,3 +6,4 @@
 */
 -- AlterTable
 ALTER TABLE `task` ADD COLUMN `category` VARCHAR(191) NOT NULL;
+/* addapi */
