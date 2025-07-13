@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../component/Navbar";
 
 interface Task {
@@ -11,60 +11,75 @@ interface Task {
 }
 
 export default function Completed() {
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 1,
-      title: "ทำการบ้านวิชาคณิตศาสตร์",
-      time: "12/07/2025",
-      completed: true,
-      editing: false,
-    },
-    {
-      id: 2,
-      title: "ออกกำลังกายตอนเย็น",
-      time: "12/07/2025",
-      completed: true,
-      editing: false,
-    },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // โหลด completed tasks จาก API
+  useEffect(() => {
+    fetch("/api/tasks?completed=true")
+      .then((res) => res.json())
+      .then((data) => {
+        setTasks(data);
+        setLoading(false);
+      })
+      .catch((e) => {
+        console.error("Failed to fetch tasks", e);
+        setLoading(false);
+      });
+  }, []);
 
   // ลบ task
-  const handleDelete = (id: number) => {
-    setTasks(tasks.filter((t) => t.id !== id));
+  const handleDelete = async (id: number) => {
+    try {
+      const res = await fetch(`/api/tasks?id=${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete task");
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   // เริ่มแก้ไข task
   const handleEdit = (id: number) => {
-    const updated = tasks.map((t) =>
-      t.id === id ? { ...t, editing: true } : t
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, editing: true } : t))
     );
-    setTasks(updated);
   };
 
   // ยกเลิกแก้ไข task
   const handleCancelEdit = (id: number) => {
-    const updated = tasks.map((t) =>
-      t.id === id ? { ...t, editing: false } : t
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, editing: false } : t))
     );
-    setTasks(updated);
   };
 
-  // บันทึกแก้ไข task
-  const handleSaveEdit = (
+  // บันทึกแก้ไข task ผ่าน API
+  const handleSaveEdit = async (
     id: number,
     updatedTitle: string,
     updatedTime: string
   ) => {
     if (!updatedTitle || !updatedTime) return;
-    const updated = tasks.map((t) =>
-      t.id === id
-        ? { ...t, title: updatedTitle, time: updatedTime, editing: false }
-        : t
-    );
-    setTasks(updated);
+    try {
+      const res = await fetch(`/api/tasks`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, title: updatedTitle, time: updatedTime }),
+      });
+      if (!res.ok) throw new Error("Failed to update task");
+      const updatedTask = await res.json();
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? updatedTask : t))
+      );
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const completedTasks = tasks.filter((t) => t.completed);
+  if (loading)
+    return <div className="p-5 text-center">Loading completed tasks...</div>;
 
   return (
     <div className="relative z-0 min-h-screen pb-24 bg-gray-50">
@@ -77,14 +92,14 @@ export default function Completed() {
             Completed Todo List
           </h1>
           <p className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg sm:text-md text-sm lg:mt-5 sm:mt-3 mt-2">
-            You have {completedTasks.length} completed tasks
+            You have {tasks.length} completed tasks
           </p>
         </div>
       </div>
 
       {/* Task List */}
       <div className="relative z-10 2xl:w-[1550px] xl:w-[1040px] lg:w-[830px] md:w-[630px] sm:w-[530px] w-[400px] mx-auto px-6 space-y-6">
-        {completedTasks.map((task) =>
+        {tasks.map((task) =>
           task.editing ? (
             <EditTaskForm
               key={task.id}
@@ -129,7 +144,6 @@ export default function Completed() {
   );
 }
 
-// Component ฟอร์มแก้ไข task
 interface EditTaskFormProps {
   task: Task;
   onSave: (id: number, title: string, time: string) => void;

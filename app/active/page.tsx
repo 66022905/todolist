@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../component/Navbar";
 
 interface Task {
@@ -11,68 +11,92 @@ interface Task {
 }
 
 export default function Active() {
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 1,
-      title: "ไปเที่ยววันหยุดกับครอบครัว",
-      time: "28/10/2025",
-      completed: false,
-      editing: false,
-    },
-    {
-      id: 2,
-      title: "ประชุมทีมพัฒนาโปรเจค",
-      time: "20/07/2025",
-      completed: false,
-      editing: false,
-    },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // โหลดข้อมูล task จาก API ตอน mount
+  useEffect(() => {
+    fetch("/api/tasks")
+      .then((res) => res.json())
+      .then((data) => {
+        setTasks(data);
+        setLoading(false);
+      })
+      .catch((e) => {
+        console.error("Failed to fetch tasks", e);
+        setLoading(false);
+      });
+  }, []);
 
   // ลบ task
-  const handleDelete = (id: number) => {
-    setTasks(tasks.filter((t) => t.id !== id));
+  const handleDelete = async (id: number) => {
+    try {
+      const res = await fetch(`/api/tasks?id=${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete task");
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   // ติ๊กว่าทำเสร็จแล้ว
-  const handleComplete = (id: number) => {
-    const updated = tasks.map((t) =>
-      t.id === id ? { ...t, completed: true, editing: false } : t
-    );
-    setTasks(updated);
+  const handleComplete = async (id: number) => {
+    try {
+      const res = await fetch(`/api/tasks`, {
+        method: "PUT", // หรือ PATCH ขึ้นกับ API
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, completed: true }),
+      });
+      if (!res.ok) throw new Error("Failed to update task");
+      const updatedTask = await res.json();
+      setTasks((prev) => prev.map((t) => (t.id === id ? updatedTask : t)));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   // เริ่มแก้ไข task
   const handleEdit = (id: number) => {
-    const updated = tasks.map((t) =>
-      t.id === id ? { ...t, editing: true } : t
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, editing: true } : t))
     );
-    setTasks(updated);
   };
 
   // ยกเลิกแก้ไข task
   const handleCancelEdit = (id: number) => {
-    const updated = tasks.map((t) =>
-      t.id === id ? { ...t, editing: false } : t
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, editing: false } : t))
     );
-    setTasks(updated);
   };
 
   // บันทึกแก้ไข task
-  const handleSaveEdit = (
+  const handleSaveEdit = async (
     id: number,
     updatedTitle: string,
     updatedTime: string
   ) => {
     if (!updatedTitle || !updatedTime) return;
-    const updated = tasks.map((t) =>
-      t.id === id
-        ? { ...t, title: updatedTitle, time: updatedTime, editing: false }
-        : t
-    );
-    setTasks(updated);
+    try {
+      const res = await fetch(`/api/tasks`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, title: updatedTitle, time: updatedTime }),
+      });
+      if (!res.ok) throw new Error("Failed to update task");
+      const updatedTask = await res.json();
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? updatedTask : t))
+      );
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const todayTasks = tasks.filter((t) => !t.completed);
+  const activeTasks = tasks.filter((t) => !t.completed);
+
+  if (loading) return <div className="p-5 text-center">Loading...</div>;
 
   return (
     <div className="relative z-0 min-h-screen pb-24 bg-gray-50">
@@ -85,14 +109,14 @@ export default function Active() {
             Active Todo List
           </h1>
           <p className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg sm:text-md text-sm lg:mt-5 sm:mt-3 mt-2">
-            You have {todayTasks.length} tasks
+            You have {activeTasks.length} tasks
           </p>
         </div>
       </div>
 
       {/* Task List */}
       <div className="relative z-10 2xl:w-[1550px] xl:w-[1040px] lg:w-[830px] md:w-[630px] sm:w-[530px] w-[400px] mx-auto px-6 space-y-6">
-        {todayTasks.map((task) =>
+        {activeTasks.map((task) =>
           task.editing ? (
             <EditTaskForm
               key={task.id}
@@ -144,7 +168,6 @@ export default function Active() {
   );
 }
 
-// Component ฟอร์มแก้ไข task
 interface EditTaskFormProps {
   task: Task;
   onSave: (id: number, title: string, time: string) => void;
@@ -152,8 +175,8 @@ interface EditTaskFormProps {
 }
 
 function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
-  const [title, setTitle] = useState(task.title);
-  const [time, setTime] = useState(task.time);
+  const [title, setTitle] = React.useState(task.title);
+  const [time, setTime] = React.useState(task.time);
 
   return (
     <div className="bg-white p-4 rounded-xl shadow space-y-3 flex flex-col">
@@ -169,7 +192,6 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
         onChange={(e) => setTime(e.target.value)}
         className="w-full border p-2 rounded"
       />
-
       <div className="flex gap-3">
         <button
           onClick={() => onSave(task.id, title, time)}

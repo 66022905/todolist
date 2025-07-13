@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../component/Navbar";
 import Image from "next/image";
 
@@ -8,87 +8,131 @@ interface Task {
   title: string;
   time: string;
   completed: boolean;
-  editing?: boolean; // เพิ่มสถานะ editing
+  categoryId: number; // ต้องมีเพื่อกรอง category work
+  editing?: boolean;
 }
 
 export default function Work() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newTime, setNewTime] = useState("");
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 1,
-      title: "ประชุมทีมพัฒนาโปรเจค",
-      time: "20/07/2025", // วัน/เดือน/ปี
-      completed: false,
-      editing: false,
-    },
-  ]);
+  // โหลด task จาก API ตอนแรก พร้อมกำหนด type ชัดเจน
+  useEffect(() => {
+    async function fetchTasks() {
+      try {
+        const res = await fetch("/api/tasks");
+        const data = (await res.json()) as Task[]; // กำหนด type ให้ data เป็น Task[]
+        const workTasks = data.filter((t) => t.categoryId === 3); // กรองเฉพาะ category work (id = 3)
+        setTasks(workTasks);
+      } catch (error) {
+        console.error("Failed to fetch tasks", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTasks();
+  }, []);
 
-  // เพิ่ม task ใหม่
-  const handleAddTask = () => {
+  // เพิ่ม task ใหม่ ผ่าน API
+  const handleAddTask = async () => {
     if (!newTitle || !newTime) return;
 
-    const newTask: Task = {
-      id: Date.now(),
-      title: newTitle,
-      time: newTime,
-      completed: false,
-      editing: false,
-    };
-
-    setTasks([...tasks, newTask]);
-    setNewTitle("");
-    setNewTime("");
-    setShowAddForm(false);
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle,
+          categoryId: 3, // work
+          time: newTime,
+        }),
+      });
+      if (res.ok) {
+        const newTask = await res.json();
+        setTasks([...tasks, newTask]);
+        setNewTitle("");
+        setNewTime("");
+        setShowAddForm(false);
+      }
+    } catch (error) {
+      console.error("Failed to add task", error);
+    }
   };
 
-  // ลบ task
-  const handleDelete = (id: number) => {
-    setTasks(tasks.filter((t) => t.id !== id));
+  // ลบ task ผ่าน API
+  const handleDelete = async (id: number) => {
+    try {
+      const res = await fetch(`/api/tasks?id=${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setTasks(tasks.filter((t) => t.id !== id));
+      }
+    } catch (error) {
+      console.error("Failed to delete task", error);
+    }
   };
 
-  // ติ๊กว่าทำเสร็จแล้ว
-  const handleComplete = (id: number) => {
-    const updated = tasks.map((t) =>
-      t.id === id ? { ...t, completed: true, editing: false } : t
-    );
-    setTasks(updated);
+  // ติ๊กเสร็จ task ผ่าน API (PATCH)
+  const handleComplete = async (id: number) => {
+    try {
+      const res = await fetch(`/api/tasks`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, completed: true }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setTasks((prev) =>
+          prev.map((t) => (t.id === id ? { ...updated, editing: false } : t))
+        );
+      }
+    } catch (error) {
+      console.error("Failed to complete task", error);
+    }
   };
 
   // เริ่มแก้ไข task
   const handleEdit = (id: number) => {
-    const updated = tasks.map((t) =>
-      t.id === id ? { ...t, editing: true } : t
-    );
-    setTasks(updated);
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, editing: true } : t)));
   };
 
   // ยกเลิกแก้ไข task
   const handleCancelEdit = (id: number) => {
-    const updated = tasks.map((t) =>
-      t.id === id ? { ...t, editing: false } : t
-    );
-    setTasks(updated);
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, editing: false } : t)));
   };
 
-  // บันทึกแก้ไข task
-  const handleSaveEdit = (
+  // บันทึกแก้ไขผ่าน API (PUT)
+  const handleSaveEdit = async (
     id: number,
     updatedTitle: string,
     updatedTime: string
   ) => {
     if (!updatedTitle || !updatedTime) return;
-    const updated = tasks.map((t) =>
-      t.id === id
-        ? { ...t, title: updatedTitle, time: updatedTime, editing: false }
-        : t
-    );
-    setTasks(updated);
+
+    try {
+      const res = await fetch(`/api/tasks`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, title: updatedTitle, time: updatedTime }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setTasks((prev) =>
+          prev.map((t) => (t.id === id ? { ...updated, editing: false } : t))
+        );
+      }
+    } catch (error) {
+      console.error("Failed to update task", error);
+    }
   };
 
   const todayTasks = tasks.filter((t) => !t.completed);
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div className="relative z-0 min-h-screen pb-24 bg-gray-50">
@@ -113,7 +157,6 @@ export default function Work() {
       <div className="relative z-10 2xl:w-[1550px] xl:w-[1040px] lg:w-[830px] md:w-[630px] sm:w-[530px] w-[400px] mx-auto px-6 space-y-6">
         {todayTasks.map((task) =>
           task.editing ? (
-            // ฟอร์มแก้ไข
             <EditTaskForm
               key={task.id}
               task={task}
@@ -121,7 +164,6 @@ export default function Work() {
               onCancel={handleCancelEdit}
             />
           ) : (
-            // แสดง task ปกติ
             <div
               key={task.id}
               className="bg-white p-5 rounded-2xl shadow-lg  flex justify-between items-center"
@@ -201,7 +243,6 @@ export default function Work() {
   );
 }
 
-// Component แยกฟอร์มแก้ไข task
 interface EditTaskFormProps {
   task: Task;
   onSave: (id: number, title: string, time: string) => void;
@@ -209,8 +250,8 @@ interface EditTaskFormProps {
 }
 
 function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
-  const [title, setTitle] = useState(task.title);
-  const [time, setTime] = useState(task.time);
+  const [title, setTitle] = React.useState(task.title);
+  const [time, setTime] = React.useState(task.time);
 
   return (
     <div className="bg-white p-4 rounded-xl shadow space-y-3 flex flex-col">
