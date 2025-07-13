@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma"; // หรือ path ให้ตรงกับไฟล์จริง
 
-
+//add api
 export async function GET() {
   try {
     const tasks = await prisma.task.findMany({

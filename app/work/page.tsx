@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../component/Navbar";
 import Image from "next/image";
-
+//add api
 interface Task {
   id: number;
   title: string;

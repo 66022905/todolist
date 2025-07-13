@@ -1,4 +1,4 @@
--- CreateTable
+-- CreateTable --a
 CREATE TABLE `Task` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `title` VARCHAR(191) NOT NULL,

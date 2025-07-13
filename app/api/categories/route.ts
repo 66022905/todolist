@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma"; 
-
+//add api
 // ดึงหมวดหมู่ทั้งหมด (GET /api/categories)
 export async function GET() {
   try {
