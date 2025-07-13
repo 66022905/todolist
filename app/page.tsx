@@ -66,7 +66,7 @@ export default function Page() {
     <div className="relative z-0">
       <Navbar />
 
-      {/* ส่วนบน */}
+   
       <div className="flex flex-row justify-center items-center my-10 px-4 gap-6 relative z-10">
         <div className="flex flex-col items-center text-center md:text-left">
           <h1 className="text-4xl font-bold">Hello</h1>
