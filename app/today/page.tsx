@@ -96,26 +96,28 @@ export default function Today() {
   };
 
   const todayTasks = tasks.filter((t) => !t.completed);
-  const todayDate = new Date().toLocaleDateString("en-GB");
 
   return (
     <div className="relative z-0 min-h-screen pb-24 bg-gray-50">
       <Navbar />
 
       {/* Header */}
-      <div className="flex justify-center items-center my-20 px-4 gap-8">
+      <div className="flex justify-center items-center 2xl:my-20 xl:my-14 lg:my-14 md:my-12 sm:my-10 my-8 px-4  lg:gap-8 gap-4 relative z-10">
         <div className="flex flex-col text-center md:text-left">
-          <h1 className="text-5xl font-bold">TODAY</h1>
-          <p className="text-xl mt-4  text-gray-600 ">📅 {todayDate}</p>
-          <p className="text-2xl mt-2">You have {todayTasks.length} tasks</p>
+          <h1 className="2xl:text-6xl xl:text-5xl lg:text-4xl md:text-3xl sm:text-2xl text-xl font-bold">
+            TODAY
+          </h1>
+          <p className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg sm:text-md text-sm lg:mt-5 sm:mt-3 mt-2">
+            You have {todayTasks.length} tasks
+          </p>
         </div>
-        <div className="w-[100px] lg:w-[160px] relative aspect-square">
+        <div className="w-[70px] 2xl:w-[160px] xl:w-[140px] lg:w-[120px] md:w-[80px] sm:w-[70px] relative aspect-square">
           <Image src="/today.png" alt="today" fill />
         </div>
       </div>
 
       {/* Task List */}
-      <div className="relative z-10 w-[1550px] mx-auto px-6 space-y-6">
+      <div className="relative z-10 2xl:w-[1550px] xl:w-[1040px] lg:w-[830px] md:w-[630px] sm:w-[530px] w-[400px] mx-auto px-6 space-y-6">
         {todayTasks.map((task) =>
           task.editing ? (
             // ฟอร์มแก้ไข
@@ -129,11 +131,15 @@ export default function Today() {
             // แสดง task ปกติ
             <div
               key={task.id}
-              className="bg-white p-6 rounded-xl shadow-lg  flex justify-between items-center"
+              className="bg-white p-5 rounded-2xl shadow-lg  flex justify-between items-center"
             >
               <div>
-                <div className="font-bold text-xl">{task.title}</div>
-                <div className="text-md text-gray-600">{task.time}</div>
+                <div className="font-bold  2xl:text-2xl xl:text-xl lg:text-lg md:text-md sm:text-sm text-sm">
+                  {task.title}
+                </div>
+                <div className="2xl:text-lg xl:text-md lg:text-sm text-xs text-gray-600">
+                  {task.time}
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -170,18 +176,18 @@ export default function Today() {
               placeholder="Task title"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full border p-2 rounded  "
+              className="w-full border p-2 rounded 2xl:text-2xl xl:text-xl lg:text-lg md:text-md sm:text-sm text-sm "
             />
             <input
               type="date"
               value={newTime}
               onChange={(e) => setNewTime(e.target.value)}
-              className="w-full border p-2 rounded  "
+              className="w-full border p-2 rounded  2xl:text-lg xl:text-md lg:text-sm text-xs"
             />
 
             <button
               onClick={handleAddTask}
-              className="bg-green-600 text-white w-full py-2 rounded hover:bg-green-700  cursor-pointer"
+              className="bg-green-600 text-white w-full py-2 rounded hover:bg-green-700 2xl:text-2xl xl:text-xl lg:text-lg md:text-md sm:text-sm text-sm  cursor-pointer"
             >
               Save Task
             </button>
@@ -193,7 +199,7 @@ export default function Today() {
       <div className="fixed bottom-5 right-5 z-50">
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full shadow-xl  cursor-pointer"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full shadow-xl xl:text-lg md:text-md text-sm  cursor-pointer"
         >
           {showAddForm ? "Cancel" : "＋ Add Task"}
         </button>
