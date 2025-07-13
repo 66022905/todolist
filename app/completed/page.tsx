@@ -10,7 +10,6 @@ interface Task {
   editing?: boolean;
 }
 
-//add api
 export default function Completed() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);

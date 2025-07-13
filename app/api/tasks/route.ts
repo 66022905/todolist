@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma"; // หรือ path ให้ตรงกับไฟล์จริง
 
 
-// ดึงงานทั้งหมด (GET /api/tasks)
 export async function GET() {
   try {
     const tasks = await prisma.task.findMany({

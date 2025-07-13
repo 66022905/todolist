@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../lib/prisma"; // ปรับ path ตามตำแหน่งจริงของ prisma
+import { prisma } from "../../lib/prisma"; 
 
 // ดึงหมวดหมู่ทั้งหมด (GET /api/categories)
 export async function GET() {

@@ -11,7 +11,6 @@ interface Task {
   categoryId: number;
   editing?: boolean;
 }
-//add api
 
 export default function Work() {
   const [showAddForm, setShowAddForm] = useState(false);
